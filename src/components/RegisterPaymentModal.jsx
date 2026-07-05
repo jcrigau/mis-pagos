@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+import Icon from './Icon'
 import { addRecord } from '../db'
 import { today, toISODate } from '../lib/dates'
 import { formatMoney } from '../lib/export'
+import { FORMAS_PAGO } from '../lib/constants'
 
 export default function RegisterPaymentModal({ open, onClose, serie, onSaved }) {
   const [fecha, setFecha] = useState(toISODate(today()))
   const [importe, setImporte] = useState('')
+  const [formaPago, setFormaPago] = useState(null)
   const [saving, setSaving] = useState(false)
 
   // Al abrir, precarga hoy + último importe conocido.
@@ -14,6 +17,7 @@ export default function RegisterPaymentModal({ open, onClose, serie, onSaved }) 
     if (open && serie) {
       setFecha(toISODate(today()))
       setImporte(serie.importeUltimo != null ? String(serie.importeUltimo) : '')
+      setFormaPago(null)
     }
   }, [open, serie])
 
@@ -22,7 +26,7 @@ export default function RegisterPaymentModal({ open, onClose, serie, onSaved }) 
   async function handleSave() {
     if (!importe || Number(importe) <= 0) return
     setSaving(true)
-    await addRecord({ seriesId: serie.id, fechaPago: fecha, importe: Number(importe) })
+    await addRecord({ seriesId: serie.id, fechaPago: fecha, importe: Number(importe), formaPago })
     setSaving(false)
     onSaved?.()
     onClose()
@@ -57,6 +61,29 @@ export default function RegisterPaymentModal({ open, onClose, serie, onSaved }) 
               {serie.importeUltimo != null && (
                 <p className="mt-1.5 text-xs text-slate-400">Último: {formatMoney(serie.importeUltimo)}</p>
               )}
+            </div>
+            <div>
+              <label className="label">Forma de pago (opcional)</label>
+              <div className="flex flex-wrap gap-2">
+                {FORMAS_PAGO.map((f) => {
+                  const active = formaPago === f.value
+                  return (
+                    <button
+                      key={f.value}
+                      type="button"
+                      onClick={() => setFormaPago(active ? null : f.value)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-medium transition active:scale-95 ${
+                        active
+                          ? 'border-brand bg-brand text-white'
+                          : 'border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <Icon name={f.icon} className="text-base" />
+                      {f.value}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
 

@@ -54,12 +54,13 @@ export async function deleteSeries(id) {
 
 // ---- PaymentRecord ----
 
-export async function addRecord({ seriesId, fechaPago, importe }) {
+export async function addRecord({ seriesId, fechaPago, importe, formaPago }) {
   const record = {
     id: uuid(),
     seriesId,
     fechaPago,
     importe: Number(importe),
+    formaPago: formaPago || null,
     createdAt: Date.now(),
   }
   await db.transaction('rw', db.series, db.records, async () => {

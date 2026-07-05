@@ -5,7 +5,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import { SubtipoBadge } from '../components/Badges'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { deleteRecord, updateRecord } from '../db'
-import { TIPOS, SUBTIPOS } from '../lib/constants'
+import { TIPOS, SUBTIPOS, FORMAS_PAGO, formaPagoMeta } from '../lib/constants'
 import { formatFecha } from '../lib/dates'
 import { exportHistoryToExcel, formatMoney } from '../lib/export'
 
@@ -127,9 +127,15 @@ export default function History({ series, records }) {
               <div key={r.id} className="card flex items-center gap-3 p-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{r.nombre}</p>
-                  <div className="mt-1 flex items-center gap-2">
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
                     <SubtipoBadge subtipo={r.subtipo} />
                     <span className="text-xs text-slate-400">{formatFecha(r.fechaPago)}</span>
+                    {r.formaPago && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                        <Icon name={formaPagoMeta(r.formaPago)?.icon || 'more_horiz'} className="text-sm" />
+                        {r.formaPago}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <span className="font-bold tabular-nums">{formatMoney(r.importe)}</span>
@@ -172,17 +178,19 @@ export default function History({ series, records }) {
 function EditRecordModal({ rec, onClose }) {
   const [fecha, setFecha] = useState('')
   const [importe, setImporte] = useState('')
+  const [formaPago, setFormaPago] = useState(null)
 
   // Sincroniza al abrir.
   useEffect(() => {
     if (rec) {
       setFecha(rec.fechaPago)
       setImporte(String(rec.importe))
+      setFormaPago(rec.formaPago || null)
     }
   }, [rec])
 
   async function save() {
-    await updateRecord(rec.id, { fechaPago: fecha, importe: Number(importe) })
+    await updateRecord(rec.id, { fechaPago: fecha, importe: Number(importe), formaPago })
     onClose()
   }
 
@@ -207,6 +215,29 @@ function EditRecordModal({ rec, onClose }) {
                 value={importe}
                 onChange={(e) => setImporte(e.target.value)}
               />
+            </div>
+            <div>
+              <label className="label">Forma de pago (opcional)</label>
+              <div className="flex flex-wrap gap-2">
+                {FORMAS_PAGO.map((f) => {
+                  const active = formaPago === f.value
+                  return (
+                    <button
+                      key={f.value}
+                      type="button"
+                      onClick={() => setFormaPago(active ? null : f.value)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-medium transition active:scale-95 ${
+                        active
+                          ? 'border-brand bg-brand text-white'
+                          : 'border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <Icon name={f.icon} className="text-base" />
+                      {f.value}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
           <div className="mt-6 flex gap-3">

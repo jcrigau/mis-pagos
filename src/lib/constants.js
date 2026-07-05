@@ -29,6 +29,20 @@ export function subtipoMeta(subtipo) {
   return SUBTIPO_META[subtipo] || SUBTIPO_META.Otros
 }
 
+// Formas de pago (opcional, por cada registro de pago puntual).
+export const FORMAS_PAGO = [
+  { value: 'Efectivo', icon: 'payments' },
+  { value: 'Cta Bancaria', icon: 'account_balance' },
+  { value: 'TC Visa', icon: 'credit_card' },
+  { value: 'TC Mastercard', icon: 'credit_card' },
+  { value: 'Mercadopago', icon: 'account_balance_wallet' },
+  { value: 'Otros', icon: 'more_horiz' },
+]
+
+export function formaPagoMeta(value) {
+  return FORMAS_PAGO.find((f) => f.value === value) || null
+}
+
 export const PERIODICIDADES = [
   { value: 1, label: 'Mensual' },
   { value: 2, label: 'Cada 2 meses' },

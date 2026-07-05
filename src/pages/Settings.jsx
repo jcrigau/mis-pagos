@@ -123,6 +123,7 @@ export default function Settings() {
         <p className="px-2 pt-2 text-center text-xs text-slate-400">
           Tus datos nunca salen de este dispositivo. Sin servidores, sin cuentas.
         </p>
+        <p className="pb-2 text-center text-xs font-semibold text-slate-400">Mis Pagos v{APP_VERSION}</p>
       </div>
 
       <ConfirmDialog

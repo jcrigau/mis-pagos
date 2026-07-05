@@ -7,7 +7,7 @@ import RegisterPaymentModal from '../components/RegisterPaymentModal'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { deleteSeries, updateSeries } from '../db'
 import { computeNextPending, relativeLabel, formatFecha, dueStatus } from '../lib/dates'
-import { periodicidadLabel } from '../lib/constants'
+import { periodicidadLabel, formaPagoMeta } from '../lib/constants'
 import { formatMoney } from '../lib/export'
 
 const STATUS_TEXT = {
@@ -119,8 +119,16 @@ export default function PaymentDetail({ series, records }) {
             </h2>
             <div className="card divide-y divide-slate-100 p-0 dark:divide-slate-800">
               {serieRecords.map((r) => (
-                <div key={r.id} className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">{formatFecha(r.fechaPago)}</span>
+                <div key={r.id} className="flex items-center justify-between gap-2 px-4 py-3">
+                  <div className="min-w-0">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">{formatFecha(r.fechaPago)}</span>
+                    {r.formaPago && (
+                      <span className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-slate-400">
+                        <Icon name={formaPagoMeta(r.formaPago)?.icon || 'more_horiz'} className="text-sm" />
+                        {r.formaPago}
+                      </span>
+                    )}
+                  </div>
                   <span className="font-semibold tabular-nums">{formatMoney(r.importe)}</span>
                 </div>
               ))}

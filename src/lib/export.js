@@ -26,10 +26,11 @@ export async function exportHistoryToExcel(filas) {
     Subtipo: f.subtipo,
     Fecha: f.fechaPago,
     Importe: f.importe,
+    'Forma de pago': f.formaPago || '',
     Notas: f.notas || '',
   }))
   const ws = XLSX.utils.json_to_sheet(data)
-  ws['!cols'] = [{ wch: 26 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 40 }]
+  ws['!cols'] = [{ wch: 26 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 40 }]
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Pagos')
   const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
