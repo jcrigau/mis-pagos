@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vite
+
+# Íconos PNG generados (se regeneran con `npm run gen-icons`)
+public/pwa-192x192.png
+public/pwa-512x512.png
+public/apple-touch-icon.png
