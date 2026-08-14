@@ -1,7 +1,7 @@
 {
   "name": "mis-pagos",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "PWA para gestionar recordatorios de pagos recurrentes, offline-first.",
   "scripts": {
@@ -26,6 +26,8 @@
     "sharp": "^0.33.5",
     "tailwindcss": "^3.4.17",
     "vite": "^6.0.7",
-    "vite-plugin-pwa": "^0.21.1"
+    "vite-plugin-pwa": "^0.21.1",
+    "workbox-core": "^7.3.0",
+    "workbox-precaching": "^7.3.0"
   }
 }

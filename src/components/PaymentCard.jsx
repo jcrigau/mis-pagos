@@ -1,3 +1,4 @@
+import Icon from './Icon'
 import { SubtipoAvatar, TipoBadge, SubtipoBadge } from './Badges'
 import { relativeLabel } from '../lib/dates'
 import { formatMoney } from '../lib/export'
@@ -20,28 +21,35 @@ const STATUS_STYLES = {
   },
 }
 
-export default function PaymentCard({ serie, due, status, onClick }) {
+export default function PaymentCard({ serie, due, status, onClick, onPay }) {
   const s = STATUS_STYLES[status] || STATUS_STYLES.lejano
   return (
-    <button
-      onClick={onClick}
-      className={`card w-full border ${s.ring} flex items-center gap-3 text-left transition active:scale-[0.99]`}
-    >
-      <SubtipoAvatar subtipo={serie.subtipo} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <h3 className="truncate text-base font-semibold">{serie.nombre}</h3>
-          <span className="shrink-0 text-base font-bold tabular-nums">{formatMoney(serie.importeUltimo)}</span>
+    <div className={`card border ${s.ring} flex items-center gap-3`}>
+      <button onClick={onClick} className="flex min-w-0 flex-1 items-center gap-3 text-left transition active:scale-[0.99]">
+        <SubtipoAvatar subtipo={serie.subtipo} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 className="truncate text-base font-semibold">{serie.nombre}</h3>
+            <span className="shrink-0 text-base font-bold tabular-nums">{formatMoney(serie.importeUltimo)}</span>
+          </div>
+          <div className={`mt-0.5 flex items-center gap-1.5 text-sm font-semibold ${s.text}`}>
+            <span className={`h-2 w-2 rounded-full ${s.dot}`} />
+            {relativeLabel(due)}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <TipoBadge tipo={serie.tipo} />
+            <SubtipoBadge subtipo={serie.subtipo} />
+          </div>
         </div>
-        <div className={`mt-0.5 flex items-center gap-1.5 text-sm font-semibold ${s.text}`}>
-          <span className={`h-2 w-2 rounded-full ${s.dot}`} />
-          {relativeLabel(due)}
-        </div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <TipoBadge tipo={serie.tipo} />
-          <SubtipoBadge subtipo={serie.subtipo} />
-        </div>
-      </div>
-    </button>
+      </button>
+      <button
+        onClick={onPay}
+        className="flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl bg-emerald-500/10 text-emerald-600 transition active:scale-95 dark:text-emerald-400"
+        aria-label={`Registrar pago de ${serie.nombre}`}
+      >
+        <Icon name="paid" className="text-2xl" />
+        <span className="text-[10px] font-bold">Pagar</span>
+      </button>
+    </div>
   )
 }

@@ -7,8 +7,15 @@ import { useTheme } from '../hooks/useTheme'
 import { db, exportAll, importAll, wipeAll } from '../db'
 import { downloadBackup, formatMoney } from '../lib/export'
 import { seedDemoData } from '../lib/demo'
+import {
+  notifSupported,
+  notifPermission,
+  notifEnabled,
+  enableNotifications,
+  disableNotifications,
+} from '../lib/notifications'
 
-const APP_VERSION = '1.0.0'
+const APP_VERSION = '1.1.0'
 
 export default function Settings() {
   const { isDark, toggle } = useTheme()
@@ -17,6 +24,8 @@ export default function Settings() {
   const [confirmWipe, setConfirmWipe] = useState(false)
   const [confirmDemo, setConfirmDemo] = useState(false)
   const [msg, setMsg] = useState('')
+  const [notifOn, setNotifOn] = useState(notifEnabled())
+  const [notifPerm, setNotifPerm] = useState(notifPermission())
 
   const records = useLiveQuery(() => db.records.toArray(), [], [])
   const seriesCount = useLiveQuery(() => db.series.count(), [], 0)
@@ -34,6 +43,27 @@ export default function Settings() {
   async function handleBackup() {
     downloadBackup(await exportAll())
     flash('Backup descargado')
+  }
+
+  async function toggleNotif() {
+    if (notifOn) {
+      await disableNotifications()
+      setNotifOn(false)
+      flash('Notificaciones desactivadas')
+    } else {
+      const res = await enableNotifications()
+      setNotifPerm(notifPermission())
+      if (res === 'granted') {
+        setNotifOn(true)
+        flash('Notificaciones activadas')
+      } else if (res === 'denied') {
+        flash('Permiso bloqueado: activalo en el navegador')
+      } else if (res === 'unsupported') {
+        flash('Este dispositivo no soporta notificaciones')
+      } else {
+        flash('No se concedió el permiso')
+      }
+    }
   }
 
   function handleFilePick(e) {
@@ -91,6 +121,30 @@ export default function Settings() {
               <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${isDark ? 'left-6' : 'left-1'}`} />
             </span>
           </button>
+        </Section>
+
+        {/* Notificaciones */}
+        <Section title="Notificaciones">
+          <button
+            onClick={toggleNotif}
+            disabled={!notifSupported() || notifPerm === 'denied'}
+            className="flex w-full items-center justify-between px-4 py-3.5 disabled:opacity-60"
+          >
+            <span className="flex items-center gap-3 font-medium">
+              <Icon name="notifications_active" className="text-brand" />
+              Avisar vencimientos
+            </span>
+            <span className={`relative h-7 w-12 rounded-full transition ${notifOn ? 'bg-brand' : 'bg-slate-300 dark:bg-slate-600'}`}>
+              <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${notifOn ? 'left-6' : 'left-1'}`} />
+            </span>
+          </button>
+          <p className="px-4 pb-3.5 text-xs text-slate-400">
+            {!notifSupported()
+              ? 'Este dispositivo no soporta notificaciones.'
+              : notifPerm === 'denied'
+                ? 'Permiso bloqueado. Habilitalo desde los ajustes del navegador para este sitio.'
+                : 'Te avisa el día del vencimiento (y los días previos que configures). Funciona mejor con la app instalada; en iPhone requiere iOS 16.4+ e instalarla en la pantalla de inicio.'}
+          </p>
         </Section>
 
         {/* Backup */}

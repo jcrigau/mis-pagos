@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import PaymentCard from '../components/PaymentCard'
 import Icon from '../components/Icon'
+import RegisterPaymentModal from '../components/RegisterPaymentModal'
 import { buildUpcoming } from '../lib/pending'
 import { formatFecha } from '../lib/dates'
 
 export default function Home({ series, records }) {
   const navigate = useNavigate()
   const [q, setQ] = useState('')
+  const [payFor, setPayFor] = useState(null)
   const { list } = useMemo(() => buildUpcoming(series, records), [series, records])
 
   const filtered = useMemo(() => {
@@ -47,10 +49,13 @@ export default function Home({ series, records }) {
               due={item.due}
               status={item.status}
               onClick={() => navigate(`/pago/${item.serie.id}`)}
+              onPay={() => setPayFor(item.serie)}
             />
           ))
         )}
       </div>
+
+      <RegisterPaymentModal open={!!payFor} onClose={() => setPayFor(null)} serie={payFor} />
     </div>
   )
 }

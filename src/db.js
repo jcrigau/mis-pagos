@@ -9,6 +9,14 @@ db.version(1).stores({
   records: 'id, seriesId, fechaPago, createdAt',
 })
 
+// v2: log de notificaciones ya mostradas (clave = seriesId|fechaVencimientoISO)
+// para no volver a notificar el mismo vencimiento.
+db.version(2).stores({
+  series: 'id, nombre, tipo, subtipo, estado, updatedAt',
+  records: 'id, seriesId, fechaPago, createdAt',
+  notifLog: 'key, notifiedAt',
+})
+
 const uuid = () =>
   crypto.randomUUID
     ? crypto.randomUUID()
