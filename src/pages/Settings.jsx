@@ -5,7 +5,7 @@ import Icon from '../components/Icon'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useTheme } from '../hooks/useTheme'
 import { db, exportAll, importAll, wipeAll } from '../db'
-import { downloadBackup, formatMoney } from '../lib/export'
+import { downloadBackup, shareBackup, lastBackupAt, formatMoney } from '../lib/export'
 import { seedDemoData } from '../lib/demo'
 import {
   notifSupported,
@@ -14,8 +14,11 @@ import {
   enableNotifications,
   disableNotifications,
 } from '../lib/notifications'
+import { hasPin, setPin, clearPin } from '../lib/pin'
+import PinDialog from '../components/PinDialog'
+import { formatFecha } from '../lib/dates'
 
-const APP_VERSION = '1.1.0'
+const APP_VERSION = '1.2.0'
 
 export default function Settings() {
   const { isDark, toggle } = useTheme()
@@ -26,6 +29,9 @@ export default function Settings() {
   const [msg, setMsg] = useState('')
   const [notifOn, setNotifOn] = useState(notifEnabled())
   const [notifPerm, setNotifPerm] = useState(notifPermission())
+  const [pinOn, setPinOn] = useState(hasPin())
+  const [pinDialog, setPinDialog] = useState(null) // 'set' | 'verify' | null
+  const [lastBackup, setLastBackup] = useState(lastBackupAt())
 
   const records = useLiveQuery(() => db.records.toArray(), [], [])
   const seriesCount = useLiveQuery(() => db.series.count(), [], 0)
@@ -42,7 +48,15 @@ export default function Settings() {
 
   async function handleBackup() {
     downloadBackup(await exportAll())
+    setLastBackup(lastBackupAt())
     flash('Backup descargado')
+  }
+
+  async function handleShareBackup() {
+    const res = await shareBackup(await exportAll())
+    setLastBackup(lastBackupAt())
+    if (res === 'shared') flash('Backup compartido')
+    else if (res === 'downloaded') flash('Compartir no disponible: se descargó')
   }
 
   async function toggleNotif() {
@@ -147,8 +161,28 @@ export default function Settings() {
           </p>
         </Section>
 
+        {/* Seguridad */}
+        <Section title="Seguridad">
+          <button
+            onClick={() => setPinDialog(pinOn ? 'verify' : 'set')}
+            className="flex w-full items-center justify-between px-4 py-3.5"
+          >
+            <span className="flex items-center gap-3 font-medium">
+              <Icon name="lock" className="text-brand" />
+              Bloqueo con PIN
+            </span>
+            <span className={`relative h-7 w-12 rounded-full transition ${pinOn ? 'bg-brand' : 'bg-slate-300 dark:bg-slate-600'}`}>
+              <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${pinOn ? 'left-6' : 'left-1'}`} />
+            </span>
+          </button>
+          <p className="px-4 pb-3.5 text-xs text-slate-400">
+            Pide un PIN de 4 a 6 dígitos al abrir la app. Si lo olvidás no vas a poder entrar, así que guardalo bien.
+          </p>
+        </Section>
+
         {/* Backup */}
         <Section title="Copia de seguridad">
+          <SettingRow icon="ios_share" label="Compartir backup (Drive, mail…)" onClick={handleShareBackup} />
           <SettingRow icon="cloud_download" label="Descargar backup (JSON)" onClick={handleBackup} />
           <SettingRow icon="cloud_upload" label="Restaurar desde archivo" onClick={() => fileRef.current?.click()} />
           <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={handleFilePick} />
@@ -171,6 +205,10 @@ export default function Settings() {
           <div className="flex items-center justify-between px-4 py-3.5 text-sm">
             <span className="text-slate-500 dark:text-slate-400">Almacenamiento</span>
             <span className="font-semibold">IndexedDB (local)</span>
+          </div>
+          <div className="flex items-center justify-between px-4 py-3.5 text-sm">
+            <span className="text-slate-500 dark:text-slate-400">Último backup</span>
+            <span className="font-semibold">{lastBackup ? formatFecha(new Date(lastBackup)) : 'Nunca'}</span>
           </div>
         </Section>
 
@@ -210,6 +248,22 @@ export default function Settings() {
         title="Cargar ejemplos"
         message="Se agregarán algunas series y pagos de muestra para probar la app."
         confirmLabel="Cargar"
+      />
+      <PinDialog
+        open={!!pinDialog}
+        mode={pinDialog || 'set'}
+        onClose={() => setPinDialog(null)}
+        onSuccess={async (pin) => {
+          if (pinDialog === 'set') {
+            await setPin(pin)
+            setPinOn(true)
+            flash('PIN activado')
+          } else {
+            clearPin()
+            setPinOn(false)
+            flash('PIN desactivado')
+          }
+        }}
       />
     </div>
   )

@@ -17,7 +17,7 @@ export async function seedDemoData() {
     { nombre: 'Netflix + Spotify', tipo: 'Personal', subtipo: 'Suscripciones', diaVencimiento: lejano, importeUltimo: 12000, periodicidad: 1, formaPago: 'TC Mastercard' },
     { nombre: 'Expensas oficina', tipo: 'Empresa', subtipo: 'Expensas', diaVencimiento: urgente, importeUltimo: 145000, periodicidad: 1, diasAntesNotificacion: 5, formaPago: 'Mercadopago' },
     { nombre: 'Monotributo', tipo: 'Empresa', subtipo: 'Impuestos', diaVencimiento: 20, importeUltimo: 38000, periodicidad: 1, formaPago: 'Efectivo' },
-    { nombre: 'Seguro del auto', tipo: 'Personal', subtipo: 'Servicios', diaVencimiento: lejano, importeUltimo: 42000, periodicidad: 3, formaPago: 'Cta Bancaria' },
+    { nombre: 'Seguro del auto', tipo: 'Personal', subtipo: 'Vehículo', diaVencimiento: lejano, importeUltimo: 42000, periodicidad: 3, formaPago: 'Cta Bancaria' },
   ]
 
   for (const d of defs) {

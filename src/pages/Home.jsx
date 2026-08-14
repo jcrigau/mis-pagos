@@ -6,11 +6,14 @@ import Icon from '../components/Icon'
 import RegisterPaymentModal from '../components/RegisterPaymentModal'
 import { buildUpcoming } from '../lib/pending'
 import { formatFecha } from '../lib/dates'
+import { exportAll } from '../db'
+import { shareBackup, backupReminderDue, snoozeBackupReminder, lastBackupAt } from '../lib/export'
 
 export default function Home({ series, records }) {
   const navigate = useNavigate()
   const [q, setQ] = useState('')
   const [payFor, setPayFor] = useState(null)
+  const [showBackupHint, setShowBackupHint] = useState(() => backupReminderDue())
   const { list } = useMemo(() => buildUpcoming(series, records), [series, records])
 
   const filtered = useMemo(() => {
@@ -26,6 +29,16 @@ export default function Home({ series, records }) {
       <PageHeader title="Próximos pagos" subtitle={formatFecha(new Date())} />
 
       <div className="space-y-3 p-4">
+        {showBackupHint && series.length > 0 && (
+          <BackupHint
+            onDone={() => setShowBackupHint(false)}
+            onDismiss={() => {
+              snoozeBackupReminder()
+              setShowBackupHint(false)
+            }}
+          />
+        )}
+
         {totalActivas > 0 && (
           <div className="relative">
             <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -56,6 +69,34 @@ export default function Home({ series, records }) {
       </div>
 
       <RegisterPaymentModal open={!!payFor} onClose={() => setPayFor(null)} serie={payFor} />
+    </div>
+  )
+}
+
+function BackupHint({ onDone, onDismiss }) {
+  const last = lastBackupAt()
+  const dias = last ? Math.floor((Date.now() - last) / 86400000) : null
+
+  async function handleBackup() {
+    const res = await shareBackup(await exportAll())
+    if (res !== 'cancelled') onDone()
+  }
+
+  return (
+    <div className="card flex items-center gap-3 border-amber-300 bg-amber-500/5 dark:border-amber-500/40">
+      <Icon name="cloud_upload" className="shrink-0 text-2xl text-amber-500" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold">
+          {last ? `Último backup hace ${dias} días` : 'Nunca hiciste un backup'}
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">Tus datos viven solo en este dispositivo.</p>
+      </div>
+      <button onClick={handleBackup} className="shrink-0 rounded-full bg-amber-500 px-3 py-2 text-xs font-bold text-white active:scale-95">
+        Hacer backup
+      </button>
+      <button onClick={onDismiss} aria-label="Posponer aviso" className="shrink-0 p-1 text-slate-400">
+        <Icon name="close" className="text-lg" />
+      </button>
     </div>
   )
 }

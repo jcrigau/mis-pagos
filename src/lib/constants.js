@@ -9,6 +9,10 @@ export const SUBTIPOS = [
   'Suscripciones',
   'Impuestos',
   'Expensas',
+  'Alquiler',
+  'Vehículo',
+  'Educación',
+  'Préstamos',
   'Laborales',
   'Otros',
 ]
@@ -16,13 +20,17 @@ export const SUBTIPOS = [
 // Ícono Material Icons Round + emoji fallback + color de acento por subtipo.
 export const SUBTIPO_META = {
   Tarjeta: { icon: 'credit_card', emoji: '💳', color: 'text-violet-500' },
-  Salud: { icon: 'local_hospital', emoji: '🏥', color: 'text-rose-500' },
-  Servicios: { icon: 'build', emoji: '🔧', color: 'text-amber-500' },
-  Suscripciones: { icon: 'notifications_active', emoji: '🔔', color: 'text-sky-500' },
-  Impuestos: { icon: 'receipt_long', emoji: '📋', color: 'text-emerald-500' },
+  Salud: { icon: 'medical_services', emoji: '🏥', color: 'text-rose-500' },
+  Servicios: { icon: 'bolt', emoji: '⚡', color: 'text-amber-500' },
+  Suscripciones: { icon: 'subscriptions', emoji: '🔔', color: 'text-sky-500' },
+  Impuestos: { icon: 'account_balance', emoji: '🏛️', color: 'text-emerald-500' },
   Expensas: { icon: 'apartment', emoji: '🏢', color: 'text-orange-500' },
+  Alquiler: { icon: 'home', emoji: '🏠', color: 'text-teal-500' },
+  Vehículo: { icon: 'directions_car', emoji: '🚗', color: 'text-blue-500' },
+  Educación: { icon: 'school', emoji: '🎓', color: 'text-purple-500' },
+  Préstamos: { icon: 'request_quote', emoji: '💰', color: 'text-cyan-600' },
   Laborales: { icon: 'work', emoji: '💼', color: 'text-indigo-500' },
-  Otros: { icon: 'push_pin', emoji: '📌', color: 'text-slate-500' },
+  Otros: { icon: 'category', emoji: '📌', color: 'text-slate-500' },
 }
 
 export function subtipoMeta(subtipo) {

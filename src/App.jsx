@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 import { buildUpcoming } from './lib/pending'
+import { isLocked } from './lib/pin'
+import LockScreen from './components/LockScreen'
 import BottomNav from './components/BottomNav'
 import Home from './pages/Home'
 import AddEditPayment from './pages/AddEditPayment'
@@ -10,9 +13,12 @@ import History from './pages/History'
 import Settings from './pages/Settings'
 
 export default function App() {
+  const [locked, setLocked] = useState(() => isLocked())
   const series = useLiveQuery(() => db.series.toArray(), [], [])
   const records = useLiveQuery(() => db.records.toArray(), [], [])
   const { overdueOrUrgent } = buildUpcoming(series, records)
+
+  if (locked) return <LockScreen onUnlock={() => setLocked(false)} />
 
   return (
     <div className="mx-auto min-h-full max-w-lg pb-24">
