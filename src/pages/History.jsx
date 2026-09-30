@@ -126,10 +126,13 @@ export default function History({ series, records }) {
             {rows.map((r) => (
               <div key={r.id} className="card flex items-center gap-3 p-3">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{r.nombre}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <p className="line-clamp-2 break-words font-semibold leading-snug">{r.nombre}</p>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <span className="font-bold tabular-nums">{formatMoney(r.importe)}</span>
+                    <span className="shrink-0 text-sm text-slate-500 dark:text-slate-400">{formatFecha(r.fechaPago)}</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     <SubtipoBadge subtipo={r.subtipo} />
-                    <span className="text-xs text-slate-400">{formatFecha(r.fechaPago)}</span>
                     {r.formaPago && (
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
                         <Icon name={formaPagoMeta(r.formaPago)?.icon || 'more_horiz'} className="text-sm" />
@@ -138,8 +141,7 @@ export default function History({ series, records }) {
                     )}
                   </div>
                 </div>
-                <span className="font-bold tabular-nums">{formatMoney(r.importe)}</span>
-                <div className="flex">
+                <div className="flex shrink-0 flex-col self-center">
                   <button
                     onClick={() => setEditRec(r)}
                     className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 active:bg-slate-200 dark:active:bg-slate-800"

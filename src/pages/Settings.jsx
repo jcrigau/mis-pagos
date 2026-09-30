@@ -18,7 +18,7 @@ import { hasPin, setPin, clearPin } from '../lib/pin'
 import PinDialog from '../components/PinDialog'
 import { formatFecha } from '../lib/dates'
 
-const APP_VERSION = '1.2.0'
+const APP_VERSION = '1.3.0'
 
 export default function Settings() {
   const { isDark, toggle } = useTheme()

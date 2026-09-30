@@ -69,7 +69,7 @@ export default function PaymentDetail({ series, records }) {
 
       <div className="space-y-4 p-4">
         <div className="card flex items-center gap-4">
-          <SubtipoAvatar subtipo={serie.subtipo} size="lg" />
+          <SubtipoAvatar subtipo={serie.subtipo} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap gap-1.5">
               <TipoBadge tipo={serie.tipo} />

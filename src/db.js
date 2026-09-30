@@ -1,4 +1,5 @@
 import Dexie from 'dexie'
+import { subtipoPorNombre } from './lib/constants'
 
 // Base de datos local (IndexedDB) — offline first, sin sync automática.
 export const db = new Dexie('mis-pagos')
@@ -16,6 +17,24 @@ db.version(2).stores({
   records: 'id, seriesId, fechaPago, createdAt',
   notifLog: 'key, notifiedAt',
 })
+
+// v3: subtipos nuevos (Luz, Gas, Telefonía, Internet, Alquiler). Reasigna las
+// series existentes según su nombre; las que no coinciden quedan igual.
+db.version(3)
+  .stores({
+    series: 'id, nombre, tipo, subtipo, estado, updatedAt',
+    records: 'id, seriesId, fechaPago, createdAt',
+    notifLog: 'key, notifiedAt',
+  })
+  .upgrade((tx) =>
+    tx
+      .table('series')
+      .toCollection()
+      .modify((serie) => {
+        const nuevo = subtipoPorNombre(serie.nombre)
+        if (nuevo && nuevo !== serie.subtipo) serie.subtipo = nuevo
+      })
+  )
 
 const uuid = () =>
   crypto.randomUUID
@@ -92,11 +111,14 @@ export async function deleteRecord(id) {
 
 // ---- Backup / Restore ----
 
+// v2: los subtipos ya incluyen la reasignación por nombre (ver db v3).
+export const BACKUP_VERSION = 2
+
 export async function exportAll() {
   const [series, records] = await Promise.all([db.series.toArray(), db.records.toArray()])
   return {
     app: 'mis-pagos',
-    version: 1,
+    version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     series,
     records,
@@ -107,12 +129,23 @@ export async function importAll(data, { replace = true } = {}) {
   if (!data || data.app !== 'mis-pagos' || !Array.isArray(data.series)) {
     throw new Error('Archivo de backup inválido.')
   }
+  if (Number(data.version) > BACKUP_VERSION) {
+    throw new Error('El backup es de una versión más nueva de la app. Actualizá la app antes de importarlo.')
+  }
+  // Backups v1 (o sin versión): mismo remapeo de subtipos que la migración v3.
+  const series =
+    Number(data.version || 1) < 2
+      ? data.series.map((s) => {
+          const nuevo = subtipoPorNombre(s.nombre)
+          return nuevo ? { ...s, subtipo: nuevo } : s
+        })
+      : data.series
   await db.transaction('rw', db.series, db.records, async () => {
     if (replace) {
       await db.series.clear()
       await db.records.clear()
     }
-    await db.series.bulkPut(data.series)
+    await db.series.bulkPut(series)
     await db.records.bulkPut(data.records || [])
   })
 }

@@ -1,28 +1,86 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import PaymentCard from '../components/PaymentCard'
 import Icon from '../components/Icon'
 import RegisterPaymentModal from '../components/RegisterPaymentModal'
 import { buildUpcoming } from '../lib/pending'
+import { SUBTIPOS, subtipoMeta } from '../lib/constants'
 import { formatFecha } from '../lib/dates'
 import { exportAll } from '../db'
 import { shareBackup, backupReminderDue, snoozeBackupReminder, lastBackupAt } from '../lib/export'
 
+const FILTERS_KEY = 'mp-home-filters'
+const TIPO_CHIPS = [
+  { value: '', label: 'Todos', icon: 'apps' },
+  { value: 'Personal', label: 'Personal', icon: 'person' },
+  { value: 'Empresa', label: 'Empresa', icon: 'business' },
+]
+
+function loadFilters() {
+  try {
+    const f = JSON.parse(localStorage.getItem(FILTERS_KEY) || '{}')
+    return {
+      tipo: typeof f.tipo === 'string' ? f.tipo : '',
+      subtipos: Array.isArray(f.subtipos) ? f.subtipos.filter((x) => typeof x === 'string') : [],
+    }
+  } catch {
+    return { tipo: '', subtipos: [] }
+  }
+}
+
 export default function Home({ series, records }) {
   const navigate = useNavigate()
   const [q, setQ] = useState('')
+  const [filters, setFilters] = useState(loadFilters)
   const [payFor, setPayFor] = useState(null)
   const [showBackupHint, setShowBackupHint] = useState(() => backupReminderDue())
   const { list } = useMemo(() => buildUpcoming(series, records), [series, records])
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(FILTERS_KEY, JSON.stringify(filters))
+    } catch {
+      // Sin storage disponible: los filtros solo duran la sesión.
+    }
+  }, [filters])
+
+  const activas = useMemo(() => series.filter((s) => s.estado === 'activo'), [series])
+  const totalActivas = activas.length
+
+  // Chips de subtipo: los que tienen al menos una serie activa (dentro del tipo elegido).
+  const subtiposDisponibles = useMemo(() => {
+    const usados = new Set(activas.filter((s) => !filters.tipo || s.tipo === filters.tipo).map((s) => s.subtipo))
+    const conocidos = SUBTIPOS.filter((st) => usados.has(st))
+    const extra = [...usados].filter((st) => !SUBTIPOS.includes(st)).sort()
+    return [...conocidos, ...extra]
+  }, [activas, filters.tipo])
+
+  // Un subtipo guardado que ya no tiene series activas no debe filtrar "a ciegas".
+  const subtiposActivos = useMemo(
+    () => filters.subtipos.filter((st) => subtiposDisponibles.includes(st)),
+    [filters.subtipos, subtiposDisponibles]
+  )
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase()
-    if (!term) return list
-    return list.filter((x) => x.serie.nombre.toLowerCase().includes(term))
-  }, [list, q])
+    const subs = new Set(subtiposActivos)
+    return list.filter(
+      (x) =>
+        (!filters.tipo || x.serie.tipo === filters.tipo) &&
+        (subs.size === 0 || subs.has(x.serie.subtipo)) &&
+        (!term || x.serie.nombre.toLowerCase().includes(term))
+    )
+  }, [list, q, filters.tipo, subtiposActivos])
 
-  const totalActivas = series.filter((s) => s.estado === 'activo').length
+  const filtering = !!q.trim() || !!filters.tipo || subtiposActivos.length > 0
+
+  const setTipo = (tipo) => setFilters((f) => ({ ...f, tipo }))
+  const toggleSubtipo = (st) =>
+    setFilters((f) => ({
+      ...f,
+      subtipos: f.subtipos.includes(st) ? f.subtipos.filter((x) => x !== st) : [...f.subtipos, st],
+    }))
 
   return (
     <div>
@@ -52,8 +110,41 @@ export default function Home({ series, records }) {
           </div>
         )}
 
+        {totalActivas > 0 && (
+          <div className="-mx-4 space-y-2">
+            <div className="no-scrollbar flex gap-2 overflow-x-auto px-4">
+              {TIPO_CHIPS.map((c) => (
+                <Chip key={c.label} active={filters.tipo === c.value} onClick={() => setTipo(c.value)} icon={c.icon}>
+                  {c.label}
+                </Chip>
+              ))}
+            </div>
+            {subtiposDisponibles.length > 0 && (
+              <div className="no-scrollbar flex gap-2 overflow-x-auto px-4">
+                {subtiposDisponibles.map((st) => {
+                  const meta = subtipoMeta(st)
+                  return (
+                    <Chip
+                      key={st}
+                      active={subtiposActivos.includes(st)}
+                      onClick={() => toggleSubtipo(st)}
+                      icon={meta.icon}
+                      tint={`${meta.bg} ${meta.fg}`}
+                    >
+                      {st}
+                    </Chip>
+                  )
+                })}
+              </div>
+            )}
+            <p className="px-4 text-sm font-medium text-slate-500 dark:text-slate-400">
+              {filtered.length} {filtered.length === 1 ? 'pago' : 'pagos'}
+            </p>
+          </div>
+        )}
+
         {filtered.length === 0 ? (
-          <EmptyState hasSeries={totalActivas > 0} onAdd={() => navigate('/agregar')} searching={!!q.trim()} />
+          <EmptyState hasSeries={totalActivas > 0} onAdd={() => navigate('/agregar')} searching={filtering} />
         ) : (
           filtered.map((item) => (
             <PaymentCard
@@ -70,6 +161,27 @@ export default function Home({ series, records }) {
 
       <RegisterPaymentModal open={!!payFor} onClose={() => setPayFor(null)} serie={payFor} />
     </div>
+  )
+}
+
+/**
+ * Chip de filtro. Sin `tint`: activo = brand. Con `tint` (color del subtipo):
+ * siempre lleva su color; activo se marca con borde en el color del texto.
+ */
+function Chip({ active, onClick, icon, tint, children }) {
+  const base =
+    'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-2 px-3 py-1.5 text-sm font-semibold transition active:scale-95'
+  const style = tint
+    ? `${tint} ${active ? 'border-current' : 'border-transparent opacity-80'}`
+    : active
+      ? 'border-brand bg-brand text-white'
+      : 'border-transparent bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
+  return (
+    <button type="button" onClick={onClick} aria-pressed={active} className={`${base} ${style}`}>
+      <Icon name={icon} className="text-lg" />
+      {children}
+      {tint && active && <Icon name="check" className="text-base" />}
+    </button>
   )
 }
 
